@@ -54,6 +54,8 @@
 #include <linux/fb.h>
 #endif
 
+#include <linux/i2c-qcom-geni.h>
+
 #define GOODIX_FLASH_CONFIG_WITH_ISP	1
 /* macros definition */
 #define GOODIX_CORE_DRIVER_NAME			"goodix_ts"
@@ -391,6 +393,8 @@ struct goodix_ts_device {
 
 	struct goodix_ts_version chip_version;
 	struct device *dev;
+
+	int irq;
 };
 
 /*
@@ -552,6 +556,9 @@ struct goodix_ts_core {
 	 * only for MTK platform
 	 * struct pm_qos_request tp_qos_request;
 	 */
+
+	struct pm_qos_request pm_i2c_req;
+	struct pm_qos_request pm_touch_req;
 };
 
 /* external module structures */
