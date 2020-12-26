@@ -1261,6 +1261,11 @@ static irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
 	}
 	mutex_unlock(&goodix_modules.mutex);
 
+	/* prevent CPU from entering deep sleep */
+	pm_qos_update_request(&core_data->pm_touch_req, 100);
+	pm_qos_update_request(&core_data->pm_i2c_req, 100);
+	pm_wakeup_event(ts_dev->dev, MSEC_PER_SEC);
+
 	/* read touch data from touch device */
 	r = ts_dev->hw_ops->event_handler(ts_dev, ts_event);
 	if (likely(r >= 0)) {
@@ -1275,6 +1280,9 @@ static irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
 					&ts_event->pen_data);
 		}
 	}
+
+	pm_qos_update_request(&core_data->pm_i2c_req, PM_QOS_DEFAULT_VALUE);
+	pm_qos_update_request(&core_data->pm_touch_req, PM_QOS_DEFAULT_VALUE);
 
 	/* clean irq flag */
 	irq_flag = 0;
@@ -1298,6 +1306,17 @@ int goodix_ts_irq_setup(struct goodix_ts_core *core_data)
 		core_data->irq = gpio_to_irq(ts_bdata->irq_gpio);
 	else
 		core_data->irq = ts_bdata->irq;
+
+	core_data->pm_i2c_req.type = PM_QOS_REQ_AFFINE_IRQ;
+	core_data->pm_i2c_req.irq = core_data->ts_dev->irq;
+	irq_set_perf_affinity(core_data->pm_i2c_req.irq, IRQF_PERF_AFFINE);
+	pm_qos_add_request(&core_data->pm_i2c_req, PM_QOS_CPU_DMA_LATENCY,
+		PM_QOS_DEFAULT_VALUE);
+
+	core_data->pm_touch_req.type = PM_QOS_REQ_AFFINE_IRQ;
+	core_data->pm_touch_req.irq = core_data->irq;
+	pm_qos_add_request(&core_data->pm_touch_req, PM_QOS_CPU_DMA_LATENCY,
+		PM_QOS_DEFAULT_VALUE);
 
 	ts_debug("IRQ:%u,flags:%d", core_data->irq, (int)ts_bdata->irq_flags);
 	r = devm_request_threaded_irq(&core_data->pdev->dev,
@@ -3146,6 +3165,7 @@ static int goodix_ts_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, core_data);
 
 	client = to_i2c_client(ts_device->dev);
+	ts_device->irq = geni_i2c_get_adap_irq(client);
 	i2c_set_clientdata(client, core_data);
 
 	r = goodix_ts_power_init(core_data);
@@ -3350,6 +3370,10 @@ static int goodix_ts_remove(struct platform_device *pdev)
 	goodix_ts_wq_exit(core_data);
 	/* can't free the memory for tools or gesture module */
 	/* kfree(core_data); */
+
+	pm_qos_remove_request(&core_data->pm_touch_req);
+	pm_qos_remove_request(&core_data->pm_i2c_req);
+
 	return 0;
 }
 
