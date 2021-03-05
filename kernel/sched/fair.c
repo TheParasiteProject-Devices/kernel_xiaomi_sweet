@@ -76,6 +76,8 @@ walt_dec_cfs_rq_stats(struct cfs_rq *cfs_rq, struct task_struct *p) {}
 
 #endif
 
+unsigned int super_big_cpu = 7;
+
 /*
  * Targeted preemption latency for CPU-bound tasks:
  *
@@ -7466,6 +7468,7 @@ enum fastpaths {
 	SYNC_WAKEUP,
 	PREV_CPU_FASTPATH,
 	MANY_WAKEUP,
+	SCHED_BIG_TOP,
 };
 
 static inline int find_best_target(struct task_struct *p, int *backup_cpu,
@@ -7493,6 +7496,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	int prev_cpu = task_cpu(p);
 	bool next_group_higher_cap = false;
 	int isolated_candidate = -1;
+	struct root_domain *rd;
 
 	*backup_cpu = -1;
 
@@ -7512,6 +7516,10 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	cpu = start_cpu(p, boosted, fbt_env->rtg_target);
 	if (cpu < 0)
 		return -1;
+
+	rd = cpu_rq(cpu)->rd;
+	if (sched_boost_top_app() && p->woken_by_top_app && rd->max_cap_orig_cpu >= 0)
+		cpu = rd->max_cap_orig_cpu;
 
 	/* Find SD for the start CPU */
 	sd = rcu_dereference(per_cpu(sd_ea, cpu));
@@ -7547,6 +7555,8 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			unsigned long wake_util, new_util, new_util_cuml;
 			long spare_cap;
 			int idle_idx = INT_MAX;
+			if (sched_boost_top_app() && i == super_big_cpu && !p->woken_by_top_app)
+				break;
 
 			trace_sched_cpu_util(i);
 
@@ -7569,6 +7579,9 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			if (fbt_env->skip_cpu == i)
 				continue;
 
+			if (sched_boost_top_app() && rd->max_cap_orig_cpu != -1 &&
+				(i >= rd->max_cap_orig_cpu && p->prio > DEFAULT_PRIO))
+				break;
 			/*
 			 * p's blocked utilization is still accounted for on prev_cpu
 			 * so prev_cpu will receive a negative bias due to the double
@@ -8188,6 +8201,13 @@ static int find_energy_efficient_cpu(struct sched_domain *sd,
 				bias_to_this_cpu(p, prev_cpu, rtg_target)) {
 		target_cpu = prev_cpu;
 		fbt_env.fastpath = MANY_WAKEUP;
+		goto out;
+	}
+
+	if (sched_boost_top_app() && p->top_app && cpu_online(super_big_cpu) &&
+		!cpu_isolated(super_big_cpu) && cpumask_test_cpu(super_big_cpu, &p->cpus_allowed)) {
+		target_cpu = super_big_cpu;
+		fbt_env.fastpath = SCHED_BIG_TOP;
 		goto out;
 	}
 
@@ -9369,6 +9389,10 @@ redo:
 			env->loop_break += sched_nr_migrate_break;
 			env->flags |= LBF_NEED_BREAK;
 			break;
+		}
+
+		if (sched_boost_top_app() && super_big_cpu == env->src_cpu && p->top_app) {
+			goto next;
 		}
 
 		if (!can_migrate_task(p, env))
