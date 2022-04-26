@@ -198,9 +198,9 @@ static int goodix_cfg_bin_proc(struct goodix_ts_core *core_data)
 	/*get register address and configuration from cfg bin*/
 	r = goodix_get_reg_and_cfg(ts_dev, cfg_bin);
 	if (!r) {
-		ts_info("success get reg and cfg info from cfg bin");
+		ts_info("read cfg from bin: ok");
 	} else {
-		ts_err("failed get cfg and reg info, update fw then retry");
+		ts_err("failed get info, update fw");
 	}
 
 	/*debug*/
