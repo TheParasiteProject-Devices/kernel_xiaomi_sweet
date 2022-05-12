@@ -700,6 +700,8 @@ endif
 # of objdump for processing symbol versions and exports
 LLVM_AR		:= llvm-ar
 LLVM_NM		:= llvm-nm
+# Set O3 optimization level for LTO
+LDFLAGS		+= --plugin-opt=O3
 export LLVM_AR LLVM_NM
 
 # Set O3 optimization level for LTO
@@ -825,7 +827,7 @@ KBUILD_CFLAGS += $(call cc-option,-fno-delete-null-pointer-checks,)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 
 ifeq ($(ld-name),lld)
-LDFLAGS += --lto-O3
+LDFLAGS += -O3
 endif
 
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
