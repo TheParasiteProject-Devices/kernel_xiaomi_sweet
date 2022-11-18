@@ -980,7 +980,7 @@ int ntfs_set_state(struct ntfs_sb_info *sbi, enum NTFS_DIRTY_FLAGS dirty)
 	case NTFS_DIRTY_ERROR:
 		ntfs_notice(sbi->sb, "Mark volume as dirty due to NTFS errors");
 		sbi->volume.real_dirty = true;
-		fallthrough;
+		NTFS3_FALLTHROUGH;
 	case NTFS_DIRTY_DIRTY:
 		info->flags |= VOLUME_FLAG_DIRTY;
 		break;

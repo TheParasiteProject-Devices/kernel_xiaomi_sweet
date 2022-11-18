@@ -1,26 +1,17 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
-#ifndef __bitmap_set
-#define __bitmap_set(a, b, c)	bitmap_set(a, b, c)
-#endif
-
-#ifndef __bitmap_clear
-#define __bitmap_clear(a, b, c)	bitmap_clear(a, b, c)
-#endif
+#define NTFS3_BITMAP_SET(a, b, c)	bitmap_set(a, b, c)
+#define NTFS3_BITMAP_CLEAR(a, b, c)	bitmap_clear(a, b, c)
 
 /*
  * Copy from include/linux/compiler_attributes.h
  */
-#ifndef __has_attribute
-#define __has_attribute(x) 0
-#endif
+#define NTFS3_HAS_ATTRIBUTE(x) 0
 
-#ifndef fallthrough
-#if __has_attribute(__fallthrough__)
-#define fallthrough __attribute__((__fallthrough__))
+#if NTFS3_HAS_ATTRIBUTE(__fallthrough__)
+#define NTFS3_FALLTHROUGH __attribute__((__fallthrough__))
 #else
-#define fallthrough do {} while (0)  /* fallthrough */
-#endif
+#define NTFS3_FALLTHROUGH do {} while (0)  /* fallthrough */
 #endif
 
 /*
