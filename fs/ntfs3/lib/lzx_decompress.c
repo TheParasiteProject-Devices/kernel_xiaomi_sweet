@@ -21,6 +21,7 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "compat.h"
 #include "decompress_common.h"
 #include "lib.h"
 
