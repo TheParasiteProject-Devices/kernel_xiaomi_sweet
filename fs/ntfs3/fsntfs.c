@@ -11,6 +11,7 @@
 #include <linux/nls.h>
 #include <linux/version.h>
 
+#include "compat.h"
 #include "debug.h"
 #include "ntfs.h"
 #include "ntfs_fs.h"

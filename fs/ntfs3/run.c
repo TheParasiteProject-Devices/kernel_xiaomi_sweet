@@ -13,6 +13,7 @@
 #include <linux/version.h>
 #include <linux/vmalloc.h>
 
+#include "compat.h"
 #include "debug.h"
 #include "ntfs.h"
 #include "ntfs_fs.h"
