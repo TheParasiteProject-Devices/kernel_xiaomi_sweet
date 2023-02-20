@@ -646,6 +646,7 @@ source "drivers/misc/echo/Kconfig"
 source "drivers/misc/cxl/Kconfig"
 source "drivers/misc/fpr_FingerprintCard/Kconfig"
 source "drivers/misc/kprofiles/Kconfig"
+source "drivers/misc/kernelsu/Kconfig"
 endmenu
 
 config OKL4_USER_VIPC
