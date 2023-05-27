@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -29,7 +30,7 @@
 #include <soc/qcom/boot_stats.h>
 
 #define SPI_NUM_CHIPSELECT	(4)
-#define SPI_XFER_TIMEOUT_MS	(250)
+#define SPI_XFER_TIMEOUT_MS	(1500)
 #define SPI_AUTO_SUSPEND_DELAY	(250)
 /* SPI SE specific registers */
 #define SE_SPI_CPHA		(0x224)
@@ -226,6 +227,13 @@ static struct spi_master *get_spi_master(struct device *dev)
 	struct spi_master *spi = platform_get_drvdata(pdev);
 
 	return spi;
+}
+
+int geni_spi_get_master_irq(struct spi_device *spi_slv)
+{
+	struct spi_geni_master *mas = spi_master_get_devdata(spi_slv->master);
+
+	return mas->irq;
 }
 
 static void spi_slv_setup(struct spi_geni_master *mas)

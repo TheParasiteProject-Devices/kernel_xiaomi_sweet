@@ -3,6 +3,7 @@
  * Android IPC Subsystem
  *
  * Copyright (C) 2007-2017 Google, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -47,11 +48,17 @@ static uint32_t binder_alloc_debug_mask;
 module_param_named(debug_mask, binder_alloc_debug_mask,
 		   uint, 0644);
 
+#ifdef CONFIG_DEBUG_KERNEL
 #define binder_alloc_debug(mask, x...) \
 	do { \
 		if (binder_alloc_debug_mask & mask) \
 			pr_info(x); \
 	} while (0)
+#else
+static inline void binder_alloc_debug(uint32_t mask, const char *fmt, ...)
+{
+}
+#endif
 
 static struct binder_buffer *binder_buffer_next(struct binder_buffer *buffer)
 {
@@ -219,6 +226,11 @@ static int binder_update_page_range(struct binder_alloc *alloc, int allocate,
 
 	if (mm) {
 		down_read(&mm->mmap_sem);
+		if (!mmget_still_valid(mm)) {
+			if (allocate == 0)
+				goto free_range;
+			goto err_no_vma;
+		}
 		vma = alloc->vma;
 	}
 
