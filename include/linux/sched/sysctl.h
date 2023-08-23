@@ -30,6 +30,7 @@ extern unsigned int sysctl_sched_sync_hint_enable;
 extern unsigned int sysctl_sched_cstate_aware;
 extern unsigned int sysctl_sched_wakeup_granularity;
 extern unsigned int sysctl_sched_child_runs_first;
+extern unsigned int sysctl_sched_energy_aware;
 extern unsigned int sysctl_sched_capacity_margin_up[MAX_MARGIN_LEVELS];
 extern unsigned int sysctl_sched_capacity_margin_down[MAX_MARGIN_LEVELS];
 #ifdef CONFIG_SCHED_WALT
@@ -52,6 +53,10 @@ walt_proc_update_handler(struct ctl_table *table, int write,
 			 void __user *buffer, size_t *lenp,
 			 loff_t *ppos);
 
+#else
+extern unsigned int sysctl_sched_boost;
+extern unsigned int sysctl_sched_min_task_util_for_boost;
+extern unsigned int sysctl_sched_min_task_util_for_colocation;
 #endif
 
 #if defined(CONFIG_PREEMPT_TRACER) || defined(CONFIG_DEBUG_PREEMPT)
@@ -133,10 +138,5 @@ extern int sched_little_cluster_coloc_fmin_khz_handler(struct ctl_table *table,
 					int write, void __user *buffer,
 					size_t *lenp, loff_t *ppos);
 #endif
-
-#define LIB_PATH_LENGTH 512
-extern char sched_lib_name[LIB_PATH_LENGTH];
-extern unsigned int sched_lib_mask_force;
-extern bool is_sched_lib_based_app(pid_t pid);
 
 #endif /* _LINUX_SCHED_SYSCTL_H */

@@ -406,7 +406,9 @@ inline void __blk_run_queue_uncond(struct request_queue *q)
 	 * can wait until all these request_fn calls have finished.
 	 */
 	q->request_fn_active++;
+	preempt_disable();
 	q->request_fn(q);
+	preempt_enable();
 	q->request_fn_active--;
 }
 EXPORT_SYMBOL_GPL(__blk_run_queue_uncond);
@@ -1471,7 +1473,11 @@ retry:
 	trace_block_sleeprq(q, bio, op);
 
 	spin_unlock_irq(q->queue_lock);
-	io_schedule();
+	/*
+	 * FIXME: this should be io_schedule().  The timeout is there as a
+	 * workaround for some io timeout problems.
+	 */
+	io_schedule_timeout(5*HZ);
 
 	/*
 	 * After sleeping, we become a "batching" process and will be able
