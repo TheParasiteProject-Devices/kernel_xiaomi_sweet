@@ -3650,7 +3650,7 @@ move_data:
 			goto dirty_vol;
 		}
 
-		__bitmap_set(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
+		NTFS3_BITMAP_SET(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
 		a_dirty = true;
 		break;
 
@@ -3664,7 +3664,7 @@ move_data:
 			goto dirty_vol;
 		}
 
-		__bitmap_clear(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
+		NTFS3_BITMAP_CLEAR(Add2Ptr(buffer_le, roff), bmp_off, bmp_bits);
 		a_dirty = true;
 		break;
 

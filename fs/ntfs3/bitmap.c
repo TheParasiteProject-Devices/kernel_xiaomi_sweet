@@ -762,7 +762,7 @@ int wnd_set_free(struct wnd_bitmap *wnd, size_t bit, size_t bits)
 
 		lock_buffer(bh);
 
-		__bitmap_clear(buf, wbit, op);
+		NTFS3_BITMAP_CLEAR(buf, wbit, op);
 
 		wnd->free_bits[iw] += op;
 
@@ -816,7 +816,7 @@ int wnd_set_used(struct wnd_bitmap *wnd, size_t bit, size_t bits)
 
 		lock_buffer(bh);
 
-		__bitmap_set(buf, wbit, op);
+		NTFS3_BITMAP_SET(buf, wbit, op);
 		wnd->free_bits[iw] -= op;
 
 		set_buffer_uptodate(bh);
@@ -1395,7 +1395,7 @@ int wnd_extend(struct wnd_bitmap *wnd, size_t new_bits)
 		lock_buffer(bh);
 		buf = (ulong *)bh->b_data;
 
-		__bitmap_clear(buf, b0, blocksize * 8 - b0);
+		NTFS3_BITMAP_CLEAR(buf, b0, blocksize * 8 - b0);
 		frb = wbits - __bitmap_weight(buf, wbits);
 		wnd->total_zeroes += frb - wnd->free_bits[iw];
 		wnd->free_bits[iw] = frb;
