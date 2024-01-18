@@ -3998,6 +3998,19 @@ static int __cam_isp_ctx_stop_dev_in_activated_unlock(
 			&stop);
 	}
 
+#ifdef CONFIG_SPECTRA_CAMERA_UPGRADE
+	if (ctx->ctx_crm_intf &&
+		ctx->ctx_crm_intf->notify_stop) {
+		struct cam_req_mgr_notify_stop notify;
+		notify.link_hdl = ctx->link_hdl;
+		CAM_DBG(CAM_ISP,
+			"Notify CRM about device stop ctx %u link 0x%x",
+			ctx->ctx_id, ctx->link_hdl);
+		ctx->ctx_crm_intf->notify_stop(&notify);
+	} else
+		CAM_ERR(CAM_ISP, "cb not present");
+#endif
+
 	/* Mask off all the incoming hardware events */
 	spin_lock_bh(&ctx->lock);
 	ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_HALT;
@@ -4274,7 +4287,9 @@ static int __cam_isp_ctx_handle_irq_in_activated(void *context,
 	} else {
 		CAM_INFO(CAM_ISP, "Ctx:%d No handle function for substate %d",
 			ctx->ctx_id, ctx_isp->substate_activated);
-		__cam_isp_ctx_dump_state_monitor_array(ctx_isp, true);
+		if (!IS_ENABLED(CONFIG_CAMERA_DISABLE_DUMP_STATE)) {
+			__cam_isp_ctx_dump_state_monitor_array(ctx_isp, true);
+		}
 	}
 	if (evt_id != CAM_ISP_HW_EVENT_DONE)
 		__cam_isp_ctx_update_state_monitor_array(ctx_isp, evt_id,

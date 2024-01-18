@@ -1,4 +1,5 @@
 /* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1918,6 +1919,16 @@ static int swrm_probe(struct platform_device *pdev)
 		goto err_pdata_fail;
 	}
 
+	/* Make inband tx interrupts as wakeup capable for slave irq */
+	swrm->swr_tx_wakeup_capable = false;
+	if (of_property_read_bool(swrm->dev->of_node,
+			"qcom,swr-mstr-tx-wakeup-capable")) {
+		swrm->swr_tx_wakeup_capable = true;
+		irq_set_irq_wake(swrm->irq, 1);
+	} else
+		dev_dbg(swrm->dev, "%s: swrm tx wakeup capable not defined",
+			__func__);
+
 	for (i = 0; i < map_length; i++) {
 		port_num = temp[3 * i];
 		port_type = temp[3 * i + 1];
@@ -2059,6 +2070,9 @@ static int swrm_probe(struct platform_device *pdev)
 				   &swrm_debug_ops);
 	}
 
+	/* Make inband tx interrupts as wakeup capable for slave irq */
+	if (swrm->master_id == MASTER_ID_TX)
+		irq_set_irq_wake(swrm->irq, 1);
 	ret = device_init_wakeup(swrm->dev, true);
 	if (ret) {
 		dev_err(swrm->dev, "Device wakeup init failed: %d\n", ret);
@@ -2214,6 +2228,7 @@ static int swrm_runtime_suspend(struct device *dev)
 	struct swr_master *mstr = &swrm->master;
 	struct swr_device *swr_dev;
 	int current_state = 0;
+	struct irq_data *irq_data = NULL;
 
 	dev_dbg(dev, "%s: pm_runtime: suspend state: %d\n",
 		__func__, swrm->state);
@@ -2253,7 +2268,9 @@ static int swrm_runtime_suspend(struct device *dev)
 
 		if (swrm->clk_stop_mode0_supp) {
 			if (swrm->wake_irq > 0) {
-				enable_irq(swrm->wake_irq);
+				irq_data = irq_get_irq_data(swrm->wake_irq);
+				if (irq_data && irqd_irq_disabled(irq_data))
+					enable_irq(swrm->wake_irq);
 			} else if (swrm->ipc_wakeup) {
 				msm_aud_evt_blocking_notifier_call_chain(
 					SWR_WAKE_IRQ_REGISTER, (void *)swrm);

@@ -39,6 +39,7 @@ struct persistent_ram_ecc_info {
 	int ecc_size;
 	int symsize;
 	int poly;
+	uint16_t *par;
 };
 
 struct persistent_ram_zone {
@@ -98,7 +99,7 @@ struct ramoops_platform_data {
 	unsigned long	console_size;
 	unsigned long	ftrace_size;
 	unsigned long	pmsg_size;
-	int		dump_oops;
+	int		max_reason;
 	u32		flags;
 	struct persistent_ram_ecc_info ecc_info;
 };

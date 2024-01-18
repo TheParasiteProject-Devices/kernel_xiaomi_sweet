@@ -535,6 +535,10 @@ static void __init mm_init(void)
 	pti_init();
 }
 
+#ifdef CONFIG_MACH_XIAOMI_VIOLET
+int fpsensor;
+#endif
+
 asmlinkage __visible void __init start_kernel(void)
 {
 	char *command_line;
@@ -570,6 +574,11 @@ asmlinkage __visible void __init start_kernel(void)
 	pr_notice("Kernel command line: %s\n", boot_command_line);
 	/* parameters may set static keys */
 	jump_label_init();
+
+#ifdef CONFIG_MACH_XIAOMI_VIOLET
+	fpsensor = strstr(command_line, "androidboot.fpsensor=fpc") ? 1 : 2;
+#endif
+
 	parse_early_param();
 	after_dashes = parse_args("Booting kernel",
 				  static_command_line, __start___param,
@@ -920,8 +929,11 @@ static void __init do_initcalls(void)
 {
 	int level;
 
-	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)
+	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++) {
 		do_initcall_level(level);
+		/* finish all async calls before going into next level */
+		async_synchronize_full();
+	}
 }
 
 /*

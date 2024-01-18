@@ -41,7 +41,7 @@
 		serial0 = &qupv3_se0_2uart;
 		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
 		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
-		spi0 = &qupv3_se4_spi;
+		spi0 = &qupv3_se6_spi;
 		i2c0 = &qupv3_se5_i2c;
 		i2c1 = &qupv3_se1_i2c;
 		i2c2 = &qupv3_se3_i2c;
@@ -456,7 +456,7 @@
 	};
 
 	chosen {
-		bootargs = "rcupdate.rcu_expedited=1 rcu_nocbs=0-7";
+		bootargs = "quiet rcupdate.rcu_expedited=1 rcu_nocbs=0-7 noirqdebug";
 	};
 
 	soc: soc { };
@@ -473,8 +473,8 @@
 				vendor {
 					compatible = "android,vendor";
 					dev = "/dev/block/platform/soc/1d84000.ufshc/by-name/vendor";
-					type = "ext4";
-					mnt_flags = "ro,barrier=1,discard";
+					type = "erofs";
+					mnt_flags = "ro";
 					fsmgr_flags = "wait,slotselect,avb";
 					status = "ok";
 				};
@@ -631,18 +631,6 @@
 		dfps_data_memory: dfps_data_region@9cf00000 {
 			reg = <0x0 0x9cf00000 0x0 0x0100000>;
 			label = "dfps_data_region";
-		};
-
-		disp_rdump_memory: disp_rdump_region@9c000000 {
-			reg = <0x0 0x9c000000 0x0 0x0f00000>;
-			label = "disp_rdump_region";
-		};
-
-		dump_mem: mem_dump_region {
-			compatible = "shared-dma-pool";
-			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
-			reusable;
-			size = <0 0x2400000>;
 		};
 
 		/* global autoconfigured region for contiguous allocations */
@@ -1055,7 +1043,6 @@
 		qcom,bark-time = <11000>;
 		qcom,pet-time = <9360>;
 		qcom,ipi-ping;
-		qcom,wakeup-enable;
 		qcom,scandump-sizes = <0x10100 0x10100 0x10100 0x10100
 				       0x10100 0x10100 0x25900 0x25900>;
 	};
@@ -1249,61 +1236,6 @@
 		qcom,llcc1_d_cache {
 			qcom,dump-node = <&LLCC_1>;
 			qcom,dump-id = <0x140>;
-		};
-	};
-
-	mem_dump {
-		compatible = "qcom,mem-dump";
-		memory-region = <&dump_mem>;
-
-		rpmh {
-			qcom,dump-size = <0x2000000>;
-			qcom,dump-id = <0xec>;
-		};
-
-		rpm_sw {
-			qcom,dump-size = <0x28000>;
-			qcom,dump-id = <0xea>;
-		};
-
-		pmic {
-			qcom,dump-size = <0x10000>;
-			qcom,dump-id = <0xe4>;
-		};
-
-		fcm {
-			qcom,dump-size = <0x8400>;
-			qcom,dump-id = <0xee>;
-		};
-
-		tmc_etf {
-			qcom,dump-size = <0x8000>;
-			qcom,dump-id = <0xf0>;
-		};
-
-		etf_swao {
-			qcom,dump-size = <0x8000>;
-			qcom,dump-id = <0xf1>;
-		};
-
-		etr_reg {
-			qcom,dump-size = <0x1000>;
-			qcom,dump-id = <0x100>;
-		};
-
-		etf_reg {
-			qcom,dump-size = <0x1000>;
-			qcom,dump-id = <0x101>;
-		};
-
-		etfswao_reg {
-			qcom,dump-size = <0x1000>;
-			qcom,dump-id = <0x102>;
-		};
-
-		misc_data {
-			qcom,dump-size = <0x1000>;
-			qcom,dump-id = <0xe8>;
 		};
 	};
 
