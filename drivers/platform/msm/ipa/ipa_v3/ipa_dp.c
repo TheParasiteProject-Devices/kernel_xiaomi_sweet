@@ -815,8 +815,9 @@ static int ipa3_rx_switch_to_intr_mode(struct ipa3_sys_context *sys)
 			atomic_set(&sys->curr_polling_state, 1);
 			__ipa3_update_curr_poll_state(sys->ep->client, 1);
 		} else {
-			IPAERR("Failed to switch to intr mode %d ch_id %d\n",
-			 sys->curr_polling_state, sys->ep->gsi_chan_hdl);
+			IPAERR("Failed to switch to intr mode %d ch_id %lu\n",
+			       atomic_read(&sys->curr_polling_state),
+			       sys->ep->gsi_chan_hdl);
 		}
 	}
 
@@ -4400,8 +4401,14 @@ static void ipa_gsi_irq_rx_notify_cb(struct gsi_chan_xfer_notify *notify)
 
 	sys = (struct ipa3_sys_context *)notify->chan_user_data;
 
-
-	sys->ep->xfer_notify_valid = true;
+	/*
+	 * In suspend just before stopping the channel possible to receive
+	 * the IEOB interrupt and xfer pointer will not be processed in this
+	 * mode and moving channel poll mode. In resume after starting the
+	 * channel will receive the IEOB interrupt and xfer pointer will be
+	 * overwritten. To avoid this process all data in polling context.
+	 */
+	sys->ep->xfer_notify_valid = false;
 	sys->ep->xfer_notify = *notify;
 
 	switch (notify->evt_id) {
@@ -4436,7 +4443,7 @@ static void ipa_dma_gsi_irq_rx_notify_cb(struct gsi_chan_xfer_notify *notify)
 		return;
 	}
 
-	sys->ep->xfer_notify_valid = true;
+	sys->ep->xfer_notify_valid = false;
 	sys->ep->xfer_notify = *notify;
 
 	switch (notify->evt_id) {
@@ -4641,7 +4648,7 @@ static int ipa_gsi_setup_transfer_ring(struct ipa3_ep_context *ep,
 	u32 ring_size, struct ipa3_sys_context *user_data, gfp_t mem_flag)
 {
 	dma_addr_t dma_addr;
-	union __packed gsi_channel_scratch ch_scratch;
+	union gsi_channel_scratch ch_scratch;
 	struct gsi_chan_props gsi_channel_props;
 	const struct ipa_gsi_ep_config *gsi_ep_info;
 	int result;

@@ -24,6 +24,8 @@
 #include "msm_vidc_clocks.h"
 #include "msm_cvp.h"
 
+static struct kmem_cache *kmem_buf_pool;
+
 #define MSM_VIDC_QBUF_BATCH_TIMEOUT 300
 #define IS_ALREADY_IN_STATE(__p, __d) (\
 	(__p >= __d)\
@@ -625,6 +627,12 @@ int msm_comm_ctrl_init(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
+	kmem_buf_pool = KMEM_CACHE(msm_vidc_buffer, SLAB_HWCACHE_ALIGN);
+	if (!kmem_buf_pool) {
+		dprintk(VIDC_ERR, "%s - failed to allocate kmem pool\n", __func__);
+		return -ENOMEM;
+	}
+
 	inst->ctrls = kcalloc(num_ctrls, sizeof(struct v4l2_ctrl *),
 				GFP_KERNEL);
 	if (!inst->ctrls) {
@@ -721,6 +729,7 @@ int msm_comm_ctrl_deinit(struct msm_vidc_inst *inst)
 	kfree(inst->ctrls);
 	kfree(inst->cluster);
 	v4l2_ctrl_handler_free(&inst->ctrl_handler);
+	kmem_cache_destroy(kmem_buf_pool);
 
 	return 0;
 }
@@ -2760,7 +2769,7 @@ exit:
 	put_inst(inst);
 }
 
-void handle_cmd_response(enum hal_command_response cmd, void *data)
+void handle_cmd_response(u32 cmd, void *data)
 {
 	dprintk(VIDC_DBG, "Command response = %d\n", cmd);
 	switch (cmd) {
@@ -4264,9 +4273,13 @@ static void populate_frame_data(struct vidc_frame_data *data,
 	tag_data.index = vb->index;
 	tag_data.type = vb->type;
 
-	msm_comm_fetch_tags(inst, &tag_data);
-	data->input_tag = tag_data.input_tag;
-	data->output_tag = tag_data.output_tag;
+	if (msm_comm_fetch_tags(inst, &tag_data)) {
+		data->input_tag = tag_data.input_tag;
+		data->output_tag = tag_data.output_tag;
+	} else {
+		data->input_tag = 0;
+		data->output_tag = 0;
+	}
 
 
 	extra_idx = EXTRADATA_IDX(vb->num_planes);
@@ -6676,7 +6689,7 @@ struct msm_vidc_buffer *msm_comm_get_vidc_buffer(struct msm_vidc_inst *inst,
 
 	if (!found) {
 		/* this is new vb2_buffer */
-		mbuf = kzalloc(sizeof(struct msm_vidc_buffer), GFP_KERNEL);
+		mbuf = kmem_cache_zalloc(kmem_buf_pool, GFP_KERNEL);
 		if (!mbuf) {
 			dprintk(VIDC_ERR, "%s: alloc msm_vidc_buffer failed\n",
 				__func__);
@@ -6959,7 +6972,7 @@ static void kref_free_mbuf(struct kref *kref)
 	struct msm_vidc_buffer *mbuf = container_of(kref,
 			struct msm_vidc_buffer, kref);
 
-	kfree(mbuf);
+	kmem_cache_free(kmem_buf_pool, mbuf);
 }
 
 void kref_put_mbuf(struct msm_vidc_buffer *mbuf)
@@ -7054,7 +7067,7 @@ exit:
 	mutex_unlock(&inst->buffer_tags.lock);
 }
 
-void msm_comm_fetch_tags(struct msm_vidc_inst *inst,
+bool msm_comm_fetch_tags(struct msm_vidc_inst *inst,
 	struct vidc_tag_data *tag_data)
 {
 	struct vidc_tag_data *temp, *next;
@@ -7062,7 +7075,7 @@ void msm_comm_fetch_tags(struct msm_vidc_inst *inst,
 	if (!inst || !tag_data) {
 		dprintk(VIDC_ERR, "%s: invalid params %pK %pK\n",
 				__func__, inst, tag_data);
-		return;
+		return false;
 	}
 	mutex_lock(&inst->buffer_tags.lock);
 	list_for_each_entry_safe(temp, next, &inst->buffer_tags.list, list) {
@@ -7070,10 +7083,13 @@ void msm_comm_fetch_tags(struct msm_vidc_inst *inst,
 				temp->type == tag_data->type) {
 			tag_data->input_tag = temp->input_tag;
 			tag_data->output_tag = temp->output_tag;
-			break;
+			mutex_unlock(&inst->buffer_tags.lock);
+			return true;
 		}
 	}
 	mutex_unlock(&inst->buffer_tags.lock);
+
+	return false;
 }
 
 void msm_comm_store_mark_data(struct msm_vidc_list *data_list,

@@ -13,6 +13,15 @@ menuconfig SPECTRA_CAMERA
       Enabling this adds support for the camera driver stack including sensor,
       IFE and postprocessing drivers.
 
+menuconfig SPECTRA_CAMERA_UPGRADE
+    bool "Qualcomm Technologies, Inc. Spectra camera and video capture upgrade support"
+    depends on ARCH_QCOM && VIDEO_V4L2 && I2C
+    ---help---
+      Say Y here to enable selecting the video adapters for
+      Qualcomm Technologies, Inc. Spectra 7150 pro camera and video capture upgrade.
+      Enabling this adds support for the camera driver stack including sensor,
+      IFE and postprocessing drivers.
+
 menuconfig MSM_AIS
     bool "Qualcomm Technologies, Inc. Automotive Imaging System"
      depends on ARCH_QCOM && VIDEO_V4L2 && I2C
@@ -37,6 +46,32 @@ config MSM_CAMERA_DEBUG
     default n
     ---help---
       Enable printk() debug for msm camera
+
+menuconfig CAMERA_DISABLE_DUMP_STATE
+    bool "Qualcomm Technologies, Inc. Spectra camera and video capture disable dump state"
+    depends on ARCH_QCOM && VIDEO_V4L2 && I2C
+    ---help---
+      Say Y here to disable dump state monitor array
+
+menuconfig CAMERA_DISABLE_DUMP_STATE
+    bool "Qualcomm Technologies, Inc. Spectra camera and video capture disable dump state"
+    depends on ARCH_QCOM && VIDEO_V4L2 && I2C
+    ---help---
+      Say Y here to disable dump state monitor array
+
+menuconfig CAMERA_DISABLE_DUMP_STATE
+    bool "Qualcomm Technologies, Inc. Spectra camera and video capture disable dump state"
+    depends on ARCH_QCOM && VIDEO_V4L2 && I2C
+    ---help---
+      Say Y here to disable dump state monitor array
+
+menuconfig CSID_CAMERA
+    bool "use CSID binning"
+    default n
+
+menuconfig SOFTLED_CAMERA
+    bool "use soft flash led"
+    default n
 
 menuconfig MSMB_CAMERA
     bool "QTI MSM camera and video capture 2.0 support"
