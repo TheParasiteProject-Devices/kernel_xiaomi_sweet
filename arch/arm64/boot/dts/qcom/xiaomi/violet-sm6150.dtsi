@@ -22,13 +22,12 @@
 
 &firmware {
     android {
-        boot_devices = "soc/7c4000.sdhci";
         vbmeta {
             parts = "vbmeta,boot,recovery,system,vendor,dtbo";
         };
         fstab {
             vendor {
-                status = "disabled";
+                fsmgr_flags = "wait,avb";
             };
         };
     };
